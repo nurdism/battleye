@@ -1,0 +1,12 @@
+# IDE
+.idea
+.vscode
+
+# Node
+node_modules
+npm-debug.log
+
+# Project files
+*.db
+.env
+dist

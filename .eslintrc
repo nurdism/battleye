@@ -1,0 +1,12 @@
+{
+  "root": true,
+  "parser": "babel-eslint",
+  "env": {
+    "node": true
+  },
+  "extends": "standard",
+  "rules": {
+    "no-tabs": 0
+  },
+  "globals": {}
+}
