@@ -1,4 +1,6 @@
-let CRC_TABLE = [
+/* tslint:disable:no-bitwise */
+
+const CRC_TABLE = new Int32Array([
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
   0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
   0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -63,36 +65,38 @@ let CRC_TABLE = [
   0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
   0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
-]
+])
 
-if (typeof Int32Array !== 'undefined') { CRC_TABLE = new Int32Array(CRC_TABLE) }
+export function crc32 (
+  buf: Buffer | number | string,
+  previous?: Buffer | number | string
+  ): Buffer {
 
-function crc32 (buf, previous) {
+  let buffer: Buffer
   if (!Buffer.isBuffer(buf)) {
     if (typeof buf === 'number') {
-      buf = Buffer.alloc(buf)
+      buffer = Buffer.alloc(buf)
     } else if (typeof buf === 'string') {
-      buf = Buffer.from(buf)
+      buffer = Buffer.from(buf)
     } else {
       throw new Error(`input must be buffer, number, or string, received ${typeof buf} `)
     }
+  } else {
+    buffer = buf
   }
 
+  let prev = previous
   if (Buffer.isBuffer(previous)) {
-    previous = previous.readUInt32BE(0)
+    prev = previous.readUInt32BE(0)
   }
 
-  let crc = ~~previous ^ -1
-  for (let n = 0; n < buf.length; n++) {
-    crc = CRC_TABLE[(crc ^ buf[n]) & 0xff] ^ (crc >>> 8)
+  let crc = ~~prev ^ -1
+  for (let n = 0; n < buffer.length; n++) { // tslint:disable-line:all
+    crc = CRC_TABLE[(crc ^ buffer[n]) & 0xff] ^ (crc >>> 8)
   }
 
-  let crcBuff = Buffer.alloc(4)
+  const crcBuff = Buffer.alloc(4)
   crcBuff.writeInt32BE((crc ^ -1), 0)
 
   return crcBuff
-}
-
-export {
-  crc32
 }

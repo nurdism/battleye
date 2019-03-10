@@ -9,4 +9,5 @@ npm-debug.log
 # Project files
 *.db
 .env
-dist
+build
+BEServer*
