@@ -1,6 +1,6 @@
 {
   "name": "battleye",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Battleye rcon client built in nodejs.",
   "main": "build/index.js",
   "repository": "https://github.com/nurdism/battleye",
