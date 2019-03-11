@@ -21,13 +21,29 @@ readCfg(process.cwd())
   .then(cfg => {
     console.log(cfg)
 
-    const socket = new Socket()
-    const connection = socket.connection({
-      password: cfg.rconpassword,
-      ip: cfg.rconip,
-      port: parseInt(cfg.rconport, 10)
+    // create socket
+    const socket = new Socket({
+      port: 2310,     // listen port
+      ip: '0.0.0.0',  // listen ip
     })
 
+    // create connection
+    const connection = socket.connection({
+      password: cfg.rconpassword,       // rcon password
+      ip: cfg.rconip,                   // rcon ip
+      port: parseInt(cfg.rconport, 10)  // rcon port
+    }, {
+      reconnect: true,            // reconnect on timeout
+      reconnectTimeout: 500,      // how long (in ms) to try reconnect
+      keepAlive: true,            // send keepAlive packet
+      keepAliveInterval: 15000,   // keepAlive packet interval (in ms)
+      timeout: true,              // timeout packets
+      timeoutInterval: 1000,      // timeout packet check interval (in ms)
+      timeoutThresholded: 5,      // packets to resend
+      timeoutTime: 2000,          // interval to resend packet (in ms)
+    })
+
+    // create readline for command input
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -62,10 +78,6 @@ readCfg(process.cwd())
 
     connection.on('connected', () => {
       console.error(`connected to ${connection.ip}:${connection.port}`)
-    })
-
-    connection.on('message', (message, packet) => {
-      console.error(`message: ${connection.ip}:${connection.port} => ${message}`)
     })
 
     connection.on('debug', console.log)
