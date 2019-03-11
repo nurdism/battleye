@@ -288,6 +288,8 @@ export class Packet {
           payload.write(cmd, 3)
         }
         break
+      case PacketType.Message:
+        break
       default:
         throw new UnknownPacketType(this.type)
     }
