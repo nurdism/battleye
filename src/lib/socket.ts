@@ -1,21 +1,26 @@
 import * as dgram from 'dgram'
-import * as emitter from 'events'
+import { EventEmitter } from 'events'
 import * as utils from './utils'
 
 import { Connection, IConnectionDetails, IConnectionOptions, IPacketResponse } from './connection'
 import { ConnectionExists, InvalidPacket, UnknownConnection } from './errors'
-import { Packet, PacketType } from './packet';
+import { Packet, PacketType } from './packet'
 
 export interface ISocketOptions {
-  port?: number
-  ip?: string
+  port?: number,
+  ip?: string,
 }
 
-export declare interface ISocket {
-  on(event: 'listening',  listener: (socket: dgram.Socket) => void): this;
-  on(event: 'received',   listener: (resolved: boolean, packet: Packet, buffer: Packet, connection: Connection, info: dgram.RemoteInfo) => void): this;
-  on(event: 'sent',       listener: (packet: Packet, buffer: Buffer, bytes: number, connection: Connection) => void): this;
-  on(event: 'error',      listener: (error: Error) => void): this;
+export declare interface Socket { // eslint-disable-line @typescript-eslint/interface-name-prefix
+  on(event: 'listening', listener: (socket: dgram.Socket) => void): this,
+  on(event: 'received', listener: (resolved: boolean, packet: Packet, buffer: Packet, connection: Connection, info: dgram.RemoteInfo) => void): this,
+  on(event: 'sent', listener: (packet: Packet, buffer: Buffer, bytes: number, connection: Connection) => void): this,
+  on(event: 'error', listener: (error: Error) => void): this,
+}
+
+interface IOptions {
+  port: number,
+  ip: string,
 }
 
 /**
@@ -26,13 +31,13 @@ export declare interface ISocket {
  * @extends {emitter}
  * @implements {ISocket}
  */
-export class Socket extends emitter implements ISocket {
-  private readonly options: ISocketOptions
+export class Socket extends EventEmitter {
+  private readonly options: IOptions
   private readonly socket: dgram.Socket
   private readonly connections: { [id: string]: Connection }
 
   private readonly info: {
-    listening: boolean
+    listening: boolean,
   }
 
   /**
@@ -40,7 +45,7 @@ export class Socket extends emitter implements ISocket {
    * @param {ISocketOptions} [options={}]
    * @memberof Socket
    */
-  constructor (options: ISocketOptions = {}) {
+  constructor(options: ISocketOptions = {}) {
     super()
 
     this.options = {
@@ -79,7 +84,7 @@ export class Socket extends emitter implements ISocket {
 
     this.socket.bind({
       address: ip,
-      port: port,
+      port,
       exclusive: true
     })
   }
@@ -98,15 +103,18 @@ export class Socket extends emitter implements ISocket {
 
     if (this.connections[conn.id] !== undefined) {
       throw new ConnectionExists()
-      return undefined
     }
 
     if (connect) {
       if (this.listening) {
-        conn.connect().catch((e: Error) => { this.emit('error', e) })
+        conn.connect().catch((e: Error) => {
+          this.emit('error', e)
+        })
       } else {
         this.socket.once('listening', () => {
-          conn.connect().catch((e: Error) => { this.emit('error', e) })
+          conn.connect().catch((e: Error) => {
+            this.emit('error', e)
+          })
         })
       }
     }
@@ -147,7 +155,8 @@ export class Socket extends emitter implements ISocket {
       return
     }
 
-    const resolved = connection.resolve(packet)
+    const resolved = connection.recieve(packet)
+
     this.emit('received', resolved, packet, buffer, connection, info)
     connection.emit('received', resolved, packet, buffer, info)
   }
@@ -164,7 +173,7 @@ export class Socket extends emitter implements ISocket {
   public send(connection: Connection, packet: Packet, resolve: boolean = true): Promise<IPacketResponse> {
     return new Promise((res: (value?: IPacketResponse | PromiseLike<IPacketResponse>) => void, rej: (reason?: Error) => void) => {
       if (!(packet instanceof Packet)) {
-        return rej(new TypeError(`packet must be an instance of BEPacket`))
+        return rej(new TypeError('packet must be an instance of BEPacket'))
       }
 
       if (!packet.valid) {
@@ -172,10 +181,10 @@ export class Socket extends emitter implements ISocket {
       }
 
       if (!(connection instanceof Connection)) {
-        return rej(new TypeError(`connection must be an instance of Connection`))
+        return rej(new TypeError('connection must be an instance of Connection'))
       }
 
-      if (packet.type === PacketType.Command && packet.sequence === null) {
+      if (packet.type === PacketType.Command && packet.sequence < 0) {
         packet.sequence = connection.sequence
       }
 
@@ -186,8 +195,10 @@ export class Socket extends emitter implements ISocket {
         return rej(e) // tslint:disable-line:no-unsafe-any
       }
 
-      this.socket.send(buffer, 0, buffer.length, connection.port, connection.ip, (err :Error, bytes: number) => {
-        if (err !== null) { return rej(err) }
+      this.socket.send(buffer, 0, buffer.length, connection.port, connection.ip, (err: Error | null, bytes: number) => {
+        if (err !== null) {
+          return rej(err)
+        }
 
         this.emit('sent', packet, buffer, bytes, connection)
 
@@ -221,7 +232,7 @@ export class Socket extends emitter implements ISocket {
    * @type {boolean}
    * @memberof Socket
    */
-  get listening (): boolean {
+  get listening(): boolean {
     return this.info.listening
   }
 }

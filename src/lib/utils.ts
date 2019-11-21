@@ -9,9 +9,9 @@ export function hashAddress (ip: string, port: number) {
 
 export interface IBEConfig {
   rconpassword?: string
-  rconport?: string
+  rconport?: number
   rconip?: string
-  maxping?: string
+  maxping?: number
 }
 
 export function readCfg (bepath: string): Promise<IBEConfig> {
@@ -29,23 +29,35 @@ export function readCfg (bepath: string): Promise<IBEConfig> {
       }
     }
 
-    fs.readFile(file, {encoding: 'utf-8'}, (err: Error, data: string) => {
+    fs.readFile(file, (err, data) => {
       if (err !== null) {
         reject(err)
         return
       }
 
-      if (data === '' || data === null) {
+      if (data.toString() === '' || data === null) {
         reject(new Error('No data found in cfg!'))
         return
       }
 
+      const config: IBEConfig = {}
       const regex = /([a-z]\w*) (.*)/gmi
-
-      const config = {}
       let matches
-      while ((matches = regex.exec(data)) !== null) { // tslint:disable-line:no-conditional-assignment
-        config[matches[1].toLowerCase()] = matches[2] // tslint:disable-line:no-unsafe-any
+      while ((matches = regex.exec(data.toString())) !== null) {
+        switch (matches[1].toLowerCase()) {
+          case 'rconpassword':
+            config.rconpassword = matches[2]
+            break
+          case 'rconport':
+            config.rconport = parseInt(matches[2], 10)
+            break
+          case 'rconip':
+            config.rconip = matches[2]
+            break
+          case 'maxping':
+            config.maxping = parseInt(matches[2], 10)
+            break
+        }
       }
 
       resolve(config)

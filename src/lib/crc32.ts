@@ -1,4 +1,5 @@
-/* tslint:disable:no-bitwise */
+/* eslint-disable no-bitwise */
+/* eslint-disable no-negated-condition */
 
 const CRC_TABLE = new Int32Array([
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
@@ -67,10 +68,10 @@ const CRC_TABLE = new Int32Array([
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 ])
 
-export function crc32 (
+export function crc32(
   buf: Buffer | number | string,
-  previous?: Buffer | number | string
-  ): Buffer {
+  previous?: Buffer | number
+): Buffer {
 
   let buffer: Buffer
   if (!Buffer.isBuffer(buf)) {
@@ -90,9 +91,9 @@ export function crc32 (
     prev = previous.readUInt32BE(0)
   }
 
-  let crc = ~~prev ^ -1
-  for (let n = 0; n < buffer.length; n++) { // tslint:disable-line:all
-    crc = CRC_TABLE[(crc ^ buffer[n]) & 0xff] ^ (crc >>> 8)
+  let crc = typeof prev === 'number' ? ~~prev ^ -1 : -1
+  for (const buff of buffer) {
+    crc = CRC_TABLE[(crc ^ buff) & 0xff] ^ (crc >>> 8)
   }
 
   const crcBuff = Buffer.alloc(4)

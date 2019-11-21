@@ -21,6 +21,10 @@ readCfg(process.cwd())
   .then(cfg => {
     console.log(cfg)
 
+    if (!cfg.rconpassword || !cfg.rconip || !cfg.rconport) {
+      throw new Error('Invalid BEServer.cfg')
+    }
+
     // create socket
     const socket = new Socket({
       port: 2310,     // listen port
@@ -29,18 +33,20 @@ readCfg(process.cwd())
 
     // create connection
     const connection = socket.connection({
+      name: 'my-server',                // server name
       password: cfg.rconpassword,       // rcon password
       ip: cfg.rconip,                   // rcon ip
-      port: parseInt(cfg.rconport, 10)  // rcon port
+      port: cfg.rconport                // rcon port
     }, {
-      reconnect: true,            // reconnect on timeout
-      reconnectTimeout: 500,      // how long (in ms) to try reconnect
-      keepAlive: true,            // send keepAlive packet
-      keepAliveInterval: 15000,   // keepAlive packet interval (in ms)
-      timeout: true,              // timeout packets
-      timeoutInterval: 1000,      // timeout packet check interval (in ms)
-      timeoutThresholded: 5,      // packets to resend
-      timeoutTime: 2000,          // interval to resend packet (in ms)
+      reconnect: true,              // reconnect on timeout
+      reconnectTimeout: 500,        // how long (in ms) to try reconnect
+      keepAlive: true,              // send keepAlive packet
+      keepAliveInterval: 15000,     // keepAlive packet interval (in ms)
+      timeout: true,                // timeout packets
+      timeoutInterval: 1000,        // interval to check packets (in ms)
+      serverTimeout: 30000,         // timeout server connection (in ms)
+      packetTimeout: 1000,          // timeout packet check interval (in ms)
+      packetTimeoutThresholded: 5,  // packets to resend
     })
 
     // create readline for command input

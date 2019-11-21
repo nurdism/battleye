@@ -1,6 +1,6 @@
 
 import { crc32 } from './crc32'
-import { InvalidPacket, InvalidSequence, PacketError, UnknownPacketType } from './errors'
+import { InvalidPacket, InvalidSequence, PacketError, UnknownPacketType, NoPassword, NoCommand } from './errors'
 
 export enum PacketType {
   Login = 0,
@@ -15,17 +15,18 @@ export enum PacketDirection {
 }
 
 export interface IPacketAttributes {
-  timestamp?: number
-  sent?: number
-  sequence?: number
-  total?: number
-  index?: number
-  data?: string
-  password?: string
-  command?: string
-  message?: string
-  login?: boolean
-  part?: Buffer
+  timestamp?: number,
+  sent?: number,
+  sequence?: number,
+  total?: number,
+  index?: number,
+  data?: string,
+  password?: string,
+  command?: string,
+  message?: string,
+  login?: boolean,
+  part?: Buffer,
+  [key: string]: number | string | boolean | Buffer | undefined | Error,
 }
 
 /**
@@ -38,7 +39,7 @@ export class Packet {
   private attributes: IPacketAttributes
   private readonly info: {
     type: PacketType,
-    direction: PacketDirection
+    direction: PacketDirection,
   }
 
   /**
@@ -52,11 +53,11 @@ export class Packet {
   constructor(type: PacketType, direction: PacketDirection, attributes: IPacketAttributes = {}) {
     this.info = {
       type,
-      direction,
+      direction
     }
 
     this.clear()
-    this.attributes = {...this.attributes, ...attributes}
+    this.attributes = { ...attributes }
   }
 
 
@@ -69,7 +70,7 @@ export class Packet {
    * @memberof Packet
    */
   public static COPY(packet: Packet): Packet {
-    return new Packet(packet.type, packet.direction, {...packet.attributes})
+    return new Packet(packet.type, packet.direction, { ...packet.attributes })
   }
 
   /**
@@ -81,18 +82,27 @@ export class Packet {
    * @memberof Packet
    */
   public static FROM(buffer: Buffer): Packet {
-    const length = buffer.length
-    if (length < 9) { throw new PacketError('Packet must contain at least 9 bytes') }
+    const { length } = buffer
+    if (length < 9) {
+      throw new PacketError('Packet must contain at least 9 bytes')
+    }
 
     const header = buffer.toString('utf8', 0, 2)
-    if (header !== 'BE') { throw new PacketError('Invalid header text') }
+    if (header !== 'BE') {
+      throw new PacketError('Invalid header text')
+    }
 
     const payload = buffer.slice(6, length)
     const checksum = buffer.readInt32BE(2)
     const crc = crc32(payload).readInt32LE(0)
 
-    if (checksum !== crc) { throw new PacketError('Packet checksum verification failed.') }
-    if (payload.readUInt8(0) !== 0xFF) { throw new PacketError('Packet missing 0xFF flag after checksum.') }
+    if (checksum !== crc) {
+      throw new PacketError('Packet checksum verification failed.')
+    }
+
+    if (payload.readUInt8(0) !== 0xFF) {
+      throw new PacketError('Packet missing 0xFF flag after checksum.')
+    }
 
     const type = payload.readUInt8(1)
     const attributes: IPacketAttributes = {}
@@ -135,7 +145,8 @@ export class Packet {
   public get(key: 'index'|'total'|'sequence'): number;
   public get(key: 'login'): boolean;
   public get(key: 'part'): Buffer;
-  public get(key: string): any { // tslint:disable-line:no-any
+  public get(key: 'error'): Error;
+  public get(key: string): number | string | boolean | Buffer | undefined | Error { // tslint:disable-line:no-any
     return this.attributes[key]
   }
 
@@ -164,7 +175,7 @@ export class Packet {
    * @memberof Packet
    */
   public has(key: string): boolean {
-    return this.attributes[key] !== undefined
+    return typeof this.attributes[key] !== 'undefined'
   }
 
   /**
@@ -173,10 +184,12 @@ export class Packet {
    * @returns {Packet}
    * @memberof Packet
    */
-  public clear (): Packet {
+  public clear(): Packet {
     this.attributes = {}
-    this.attributes.timestamp = new Date().getTime() //new timestamp
-    if (this.direction === PacketDirection.Request) { this.attributes.sent = 0 }
+    this.attributes.timestamp = new Date().getTime() // new timestamp
+    if (this.direction === PacketDirection.Request) {
+      this.attributes.sent = 0
+    }
     return this
   }
 
@@ -187,7 +200,7 @@ export class Packet {
    * @type {number}
    * @memberof Packet
    */
-  public get type (): number {
+  public get type(): number {
     return this.info.type
   }
 
@@ -198,7 +211,7 @@ export class Packet {
    * @type {number}
    * @memberof Packet
    */
-  public get direction (): number {
+  public get direction(): number {
     return this.info.direction
   }
 
@@ -209,7 +222,7 @@ export class Packet {
    * @type {number}
    * @memberof Packet
    */
-  public get timestamp (): number {
+  public get timestamp(): number | undefined {
     return this.attributes.timestamp
   }
 
@@ -220,8 +233,8 @@ export class Packet {
    * @type {number}
    * @memberof Packet
    */
-  public get sent (): number {
-    return this.attributes.sent === undefined ? 0 : this.attributes.sent
+  public get sent(): number {
+    return typeof this.attributes.sent === 'number' ? this.attributes.sent : 0
   }
 
   /**
@@ -230,8 +243,8 @@ export class Packet {
    * @type {number}
    * @memberof Packet
    */
-  public get sequence (): number {
-    return Number.isInteger(this.attributes.sequence) ? this.attributes.sequence : 0
+  public get sequence(): number {
+    return typeof this.attributes.sequence === 'number' ? this.attributes.sequence : -1
   }
 
   /**
@@ -239,7 +252,7 @@ export class Packet {
    *
    * @memberof Packet
    */
-  public set sequence (sequence: number) {
+  public set sequence(sequence: number) {
     if (sequence < 0 || sequence > 255) {
       throw new InvalidSequence(sequence)
     }
@@ -252,7 +265,7 @@ export class Packet {
    * @readonly
    * @memberof Packet
    */
-  public get valid () {
+  public get valid() {
     return (Number.isInteger(this.type) && Number.isInteger(this.direction))
   }
 
@@ -262,7 +275,7 @@ export class Packet {
    * @returns {Buffer}
    * @memberof Packet
    */
-  public serialize (): Buffer {
+  public serialize(): Buffer {
     if (!this.valid) {
       throw new InvalidPacket()
     }
@@ -270,42 +283,42 @@ export class Packet {
     let payload: Buffer
     switch (this.type) {
       case PacketType.Login:
-        if (this.has('password')) {
-          const password = this.get('password')
-          payload = Buffer.alloc(password.length + 2)
-          payload.writeUInt8(0xFF, 0)
-          payload.writeUInt8(this.type, 1)
-          payload.write(password, 2)
+        if (!this.has('password')) {
+          throw new NoPassword()
         }
+        const password = this.get('password')
+        payload = Buffer.alloc(password.length + 2)
+        payload.writeUInt8(0xFF, 0)
+        payload.writeUInt8(this.type, 1)
+        payload.write(password, 2)
         break
       case PacketType.Command:
-        if (this.has('command')) {
-          const cmd = this.get('command')
-          payload = Buffer.alloc(cmd.length + 3)
-          payload.writeUInt8(0xFF, 0)
-          payload.writeUInt8(this.type, 1)
-          payload.writeUInt8(this.sequence, 2)
-          payload.write(cmd, 3)
+        if (!this.has('command')) {
+          throw new NoCommand()
         }
+
+        const cmd = this.get('command')
+        payload = Buffer.alloc(cmd.length + 3)
+        payload.writeUInt8(0xFF, 0)
+        payload.writeUInt8(this.type, 1)
+        payload.writeUInt8(this.sequence, 2)
+        payload.write(cmd, 3)
         break
       case PacketType.Message:
+        payload = Buffer.alloc(3)
+        payload.writeUInt8(0xFF, 0)
+        payload.writeUInt8(this.type, 1)
+        payload.writeUInt8(this.sequence, 2)
         break
       default:
         throw new UnknownPacketType(this.type)
-    }
-
-    if (payload === undefined) {
-      payload = Buffer.alloc(3)
-      payload.writeUInt8(0xFF, 0)
-      payload.writeUInt8(this.type, 1)
-      payload.writeUInt8(this.sequence, 2)
     }
 
     const crc = crc32(payload)
     const header = Buffer.from([0x42, 0x45, 0x00, 0x00, 0x00, 0x00])
     header.writeInt32BE(crc.readInt32LE(0), 2)
 
-    this.attributes.sent = this.attributes.sent === undefined ? 1 : this.attributes.sent + 1
+    this.attributes.sent = this.attributes.sent ? this.attributes.sent + 1 : 1
 
     return Buffer.concat([header, payload], header.length + payload.length)
   }

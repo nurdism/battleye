@@ -1,0 +1,33 @@
+{
+	"extends": "bamboo",
+  "parserOptions": {
+		"project": "./tsconfig.json"
+	},
+	"rules": {
+    "quotes": ["error", "single"],
+    "linebreak-style": ["error", "unix"],
+    "quote-props": "off",
+    "no-case-declarations": "off",
+    "no-cond-assign": "off",
+    "padded-blocks": "off",
+    "@typescript-eslint/member-ordering": "off",
+    "@typescript-eslint/explicit-member-accessibility": "off",
+    "@typescript-eslint/indent": ["error", 2, { "SwitchCase": 1,  "ignoredNodes": ["MemberExpression"] }],
+    "@typescript-eslint/semi": ["error", "never"],
+    "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/ban-ts-ignore": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/member-delimiter-style": [ "error", {
+        "multiline": {
+            "delimiter": "comma",
+            "requireLast": true
+        },
+        "singleline": {
+            "delimiter": "comma",
+            "requireLast": false
+        }
+    }]
+	}
+}

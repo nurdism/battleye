@@ -1,18 +1,24 @@
 {
   "name": "battleye",
-  "version": "1.0.2",
-  "description": "Battleye rcon client built in nodejs.",
-  "keywords": ["battleye", "rcon", "arma", "dayz", "ark"],
-  "main": "build/index.js",
+  "version": "2.0.0",
+  "description": "Battleye rcon client built in typescript for node.",
+  "keywords": [
+    "battleye",
+    "rcon",
+    "arma",
+    "dayz",
+    "ark"
+  ],
+  "main": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
   "repository": "https://github.com/nurdism/battleye",
   "homepage": "https://github.com/nurdism/battleye",
   "scripts": {
     "clean": "rimraf coverage build tmp",
-    "build": "tsc -p tsconfig.release.json",
+    "build": "tsc",
     "lint": "tslint -t stylish --project tsconfig.json",
-    "release": "npm run clean && npm run lint && npm run build && standard-version && git push --follow-tags && npm publish",
-    "precommit": "npm run lint",
-    "deps": "npm-check -u"
+    "release": "npm run clean && npm run lint && npm run build && git push --follow-tags && npm publish",
+    "precommit": "npm run lint"
   },
   "author": {
     "name": "Nurdism",
@@ -22,14 +28,12 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "^11.11.0",
-    "npm-check": "^5.9.0",
-    "prettier": "^1.16.4",
-    "rimraf": "^2.6.3",
-    "standard-version": "^5.0.1",
-    "tslint": "^5.13.1",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-microsoft-contrib": "^6.1.0",
-    "typescript": "^3.3.3333"
+    "@types/node": "12.12.11",
+    "@typescript-eslint/eslint-plugin": "^2.8.1-alpha.6",
+    "@typescript-eslint/parser": "^2.8.1-alpha.6",
+    "eslint": "^6.5.1",
+    "eslint-config-bamboo": "^3.0.0",
+    "rimraf": "^3.0.0",
+    "typescript": "3.7.2"
   }
 }

@@ -20,11 +20,15 @@ Command	Description
 */
 
 import * as readline from 'readline'
-import { readCfg, Socket } from '..'
+import { readCfg, Socket } from '../lib/index'
 
 readCfg(process.cwd())
   .then(cfg => {
     console.log(cfg)
+
+    if (!cfg.rconpassword || !cfg.rconip || !cfg.rconport) {
+      throw new Error('Invalid BEServer.cfg')
+    }
 
     const socket = new Socket({
       port: 2310,     // listen port
@@ -32,18 +36,20 @@ readCfg(process.cwd())
     })
 
     const connection = socket.connection({
+      name: 'my-server',                // server name
       password: cfg.rconpassword,       // rcon password
       ip: cfg.rconip,                   // rcon ip
-      port: parseInt(cfg.rconport, 10)  // rcon port
+      port: cfg.rconport                // rcon port
     }, {
-      reconnect: true,            // reconnect on timeout
-      reconnectTimeout: 500,      // how long (in ms) to try reconnect
-      keepAlive: true,            // send keepAlive packet
-      keepAliveInterval: 15000,   // keepAlive packet interval (in ms)
-      timeout: true,              // timeout packets
-      timeoutInterval: 1000,      // timeout packet check interval (in ms)
-      timeoutThresholded: 5,      // packets to resend
-      timeoutTime: 2000,          // interval to resend packet (in ms)
+      reconnect: true,              // reconnect on timeout
+      reconnectTimeout: 500,        // how long (in ms) to try reconnect
+      keepAlive: true,              // send keepAlive packet
+      keepAliveInterval: 15000,     // keepAlive packet interval (in ms)
+      timeout: true,                // timeout packets
+      timeoutInterval: 1000,        // interval to check packets (in ms)
+      serverTimeout: 30000,         // timeout server connection (in ms)
+      packetTimeout: 1000,          // timeout packet check interval (in ms)
+      packetTimeoutThresholded: 5,  // packets to resend
     })
 
     const rl = readline.createInterface({
@@ -51,40 +57,33 @@ readCfg(process.cwd())
       output: process.stdout
     })
 
-    // @ts-ignore
     socket.on('listening', (socket) => {
       const addr = socket.address()
       console.log(`Socket listening on ${typeof addr === 'string' ? addr : `${addr.address}:${addr.port}`}`)
     })
 
-    // @ts-ignore
     socket.on('received', (resolved, packet, buffer, connection, info) => {
       console.log(`received: ${connection.ip}:${connection.port} => packet:`, packet)
     })
 
-    // @ts-ignore
     socket.on('sent', (packet, buffer, bytes, connection) => {
       console.log(`sent: ${connection.ip}:${connection.port} => packet:`, packet)
     })
 
     socket.on('error', (err) => { console.error(`SOCKET ERROR:`, err) })
 
-    // @ts-ignore
     connection.on('message', (message, packet) => {
       console.log(`message: ${connection.ip}:${connection.port} => message: ${message}`)
     })
 
-    // @ts-ignore
     connection.on('command', (data, resolved, packet) => {
       console.log(`command: ${connection.ip}:${connection.port} => packet:`, packet)
     })
 
-    // @ts-ignore
     connection.on('disconnected', (reason) => {
       console.warn(`disconnected from ${connection.ip}:${connection.port},`, reason)
     })
 
-    // @ts-ignore
     connection.on('connected', () => {
       console.error(`connected to ${connection.ip}:${connection.port}`)
     })

@@ -1,13 +1,31 @@
-# IDE
-.idea
-.vscode
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Node
-node_modules
-npm-debug.log
+# Log/Temp files
+.tmp/
+tmp/
+*.tmp
+.logs/
+logs/
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Ignore the compiled output and data.
+dist/
+
+# Node modules
+node_modules/
 
 # Project files
-*.db
-.env
-build
-BEServer*
+BEServer.cfg
